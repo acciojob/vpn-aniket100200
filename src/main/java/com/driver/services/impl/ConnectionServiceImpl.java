@@ -34,8 +34,8 @@ public class ConnectionServiceImpl implements ConnectionService {
         User user=userRepository2.findById(userId).get();
         if(user.getConnected())throw new Exception("Already connected");
 
-        String country=user.getUserName();
-        if(country.equals(countryName))return user;
+        String country=user.getCountry().getCountryName().toCode();
+        if(country.equals(CountryName.fromStringToCountryName(countryName).toCode()))return user;
 
         List<ServiceProvider>serviceProviders=user.getServiceProviderList();
 
@@ -51,7 +51,7 @@ public class ConnectionServiceImpl implements ConnectionService {
 
             for(Country country1:countryList)
             {
-                if(country1.getCountryName().equals(countryName))
+                if(country1.getCountryName().toCode().equals(CountryName.fromStringToCountryName(countryName).toCode()))
                 {
                     if(provider==null || provider.getId()>serviceProvider.getId())
                     {
@@ -68,8 +68,11 @@ public class ConnectionServiceImpl implements ConnectionService {
            connection.setUser(user);
            connection.setServiceProvider(provider);
            user.setConnected(true);
-           user.getConnectionList().add(connection);
+
+          connection= connectionRepository2.save(connection);
+            user.getConnectionList().add(connection);
            user =userRepository2.save(user);
+
         }
         else throw new Exception("Unable to connect");
 
@@ -126,9 +129,10 @@ public class ConnectionServiceImpl implements ConnectionService {
         String receiverCountry=receiver.getCountry().getCountryName().toCode();
        if(receiver.getConnected())
        {
-          String[]arr=receiver.getMaskedIp().split(".");
+         String maskedIp=receiver.getMaskedIp();
+
           //arr[0] is Country Code..
-           receiverCountry=arr[0];
+           receiverCountry=maskedIp.substring(0,3);
        }
        if(senderCountry.equals(receiverCountry))
        {
